@@ -16,10 +16,9 @@ type cmdOptions struct {
 
 func main() {
 	opts := &cmdOptions{}
-	p := flags.NewParser(opts, flags.HelpFlag)
+	p := flags.NewParser(opts, flags.Default)
 	args, err := p.Parse()
 	if err != nil {
-		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 
