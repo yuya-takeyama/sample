@@ -26,14 +26,10 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	lineCh := make(chan []byte)
-	exitCh := make(chan bool)
-
-	go readInputs(os.Stdin, args, lineCh, exitCh)
-	printSampledLines(lineCh, exitCh, rate)
+	readInput(os.Stdin, args, rate)
 }
 
-func readInputs(stdin io.Reader, args []string, lineCh chan []byte, exitCh chan bool) {
+func readInput(stdin io.Reader, args []string, rate float64) {
 	if len(args) > 0 {
 		for _, filepath := range args {
 			file, err := os.Open(filepath)
@@ -42,7 +38,7 @@ func readInputs(stdin io.Reader, args []string, lineCh chan []byte, exitCh chan 
 				os.Exit(1)
 			}
 
-			readLines(file, lineCh)
+			sample(file, rate)
 
 			if err = file.Close(); err != nil {
 				fmt.Fprintf(os.Stderr, "failed to close file: %s\n", err.Error())
@@ -50,31 +46,17 @@ func readInputs(stdin io.Reader, args []string, lineCh chan []byte, exitCh chan 
 			}
 		}
 	} else {
-		readLines(stdin, lineCh)
+		sample(stdin, rate)
 	}
-
-	exitCh <- true
 }
 
-func readLines(file io.Reader, lineCh chan []byte) {
+func sample(file io.Reader, rate float64) {
 	reader := bufio.NewReader(file)
 	var line []byte
 	var err error
 	for ; err == nil; line, err = reader.ReadBytes('\n') {
-		lineCh <- line
-	}
-}
-
-func printSampledLines(lineCh chan []byte, exitCh chan bool, rate float64) {
-	for {
-		select {
-		case line := <-lineCh:
-			if rand.Float64() < rate {
-				os.Stdout.Write(line)
-			}
-
-		case <-exitCh:
-			return
+		if rand.Float64() < rate {
+			os.Stdout.Write(line)
 		}
 	}
 }
